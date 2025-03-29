@@ -246,7 +246,7 @@ public class ball extends Application {
 
         // Проверяем вылет за границы
         if (isBallOutOfBounds(nextX, nextY)) {
-            handleBallExit();
+            handleBallExit();// Обработка вылета
             return;
         }
 
