@@ -1,144 +1,323 @@
 package org.example.ball;
 
-import javafx.animation.Animation;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.layout.Pane;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Line;
+import javafx.scene.shape.*;
 import javafx.stage.Stage;
+import javafx.animation.*;
 import javafx.util.Duration;
+import javafx.geometry.*;
 
+import java.util.Random;
+
+/**
+ * Программа "Симулятор шарика с ручным перезапуском"
+ *
+ * Особенности:
+ * - Реалистичная физика отскоков
+ * - Шарик вылетает за границы и ждет команды
+ * - Полный контроль пользователя
+ * - Подробная документация
+ */
 public class ball extends Application {
 
-    // Увеличенные размеры сцены
-    private static final double SCENE_WIDTH = 1000;
-    private static final double SCENE_HEIGHT = 700;
+    // Размеры основного окна
+    private static final int WINDOW_WIDTH = 1000;
+    private static final int WINDOW_HEIGHT = 600;
+
+    // Параметры стакана (области движения)
+    private static final int GLASS_X = 150;       // Позиция стакана по X
+    private static final int GLASS_Y = 100;       // Позиция стакана по Y
+    private static final int GLASS_WIDTH = 800;   // Ширина области
+    private static final int GLASS_HEIGHT = 400;  // Высота области
 
     // Параметры шарика
-    private static final double BALL_RADIUS = 25;
-    private static final double BALL_START_X = 150;
-    private static final double BALL_START_Y = 350;
+    private static final int BALL_RADIUS = 15;    // Радиус шарика
+    private static final Color BALL_COLOR = Color.RED; // Цвет шарика
 
-    // Увеличенные параметры стакана (3 стенки)
-    private static final double GLASS_X = 100;
-    private static final double GLASS_Y = 100;
-    private static final double GLASS_WIDTH = 800;  // Значительно шире
-    private static final double GLASS_HEIGHT = 500;  // Выше
+    // Физические параметры
+    private static final double MIN_SPEED = 3;     // Минимальная скорость
+    private static final double MAX_SPEED = 8;     // Максимальная скорость
 
-    // Цвета
-    private static final Color BACKGROUND_COLOR = Color.WHITE;
-    private static final Color BALL_COLOR = Color.RED;
-    private static final Color GLASS_COLOR = Color.BLACK;
+    // Графические элементы
+    private Circle ball;          // Объект шарика
+    private Timeline timeline;    // Таймер анимации
 
-    // Усиленные физические параметры
-    private static final double BOUNCE_FACTOR = 0.98;  // Почти идеальный отскок
-    private static final double GRAVITY = 0.2;         // Меньше гравитация
-    private static final double INITIAL_DX = 12;       // Сильнее начальный толчок
-    private static final double INITIAL_DY = -10;      // Сильнее вверх
+    // Физические переменные
+    private double dx, dy;        // Скорости по осям X и Y
+    private int bounceCount = 0;  // Счетчик отскоков
+    private Random random = new Random(); // Генератор случайных чисел
 
-    private Circle ball;
-    private Timeline timeline;
-    private double dx = INITIAL_DX;
-    private double dy = INITIAL_DY;
-    private Label speedLabel;
+    // Элементы управления
+    private TextField angleField; // Поле ввода угла
+    private Button startBtn;      // Кнопка запуска/перезапуска
+    private Label statusLabel;    // Метка статуса
 
+    /**
+     * Точка входа в JavaFX приложение
+     * @param stage Главное окно приложения
+     */
     @Override
-    public void start(Stage primaryStage) {
+    public void start(Stage stage) {
+        // Создаем корневой контейнер
         Pane root = new Pane();
-        Scene scene = new Scene(root, SCENE_WIDTH, SCENE_HEIGHT);
-        scene.setFill(BACKGROUND_COLOR);
 
-        // Создаем 3 стенки (верхнюю, правую и нижнюю)
-        Line topWall = new Line(GLASS_X, GLASS_Y, GLASS_X + GLASS_WIDTH, GLASS_Y);
-        Line rightWall = new Line(GLASS_X + GLASS_WIDTH, GLASS_Y,
+        // Настройка сцены
+        setupScene(root);
+
+        // Создаем основную сцену
+        Scene scene = new Scene(root, WINDOW_WIDTH, WINDOW_HEIGHT);
+        stage.setTitle("Управляемый симулятор шарика");
+        stage.setScene(scene);
+        stage.show();
+    }
+
+    /**
+     * Настройка всех графических элементов
+     * @param root Корневой контейнер для добавления элементов
+     */
+    private void setupScene(Pane root) {
+        // 1. Создаем стакан (3 стенки)
+        createGlass(root);
+
+        // 2. Инициализируем шарик
+        initBall(root);
+
+        // 3. Настраиваем элементы управления
+        setupControls(root);
+
+        // 4. Настраиваем анимацию
+        setupAnimation();
+    }
+
+    /**
+     * Создание графического представления "стакана" (3 стенки)
+     * @param root Контейнер для добавления элементов
+     */
+    private void createGlass(Pane root) {
+        // Верхняя стенка
+        Line top = new Line(GLASS_X, GLASS_Y, GLASS_X + GLASS_WIDTH, GLASS_Y);
+
+        // Правая стенка
+        Line right = new Line(GLASS_X + GLASS_WIDTH, GLASS_Y,
                 GLASS_X + GLASS_WIDTH, GLASS_Y + GLASS_HEIGHT);
-        Line bottomWall = new Line(GLASS_X, GLASS_Y + GLASS_HEIGHT,
+
+        // Нижняя стенка
+        Line bottom = new Line(GLASS_X, GLASS_Y + GLASS_HEIGHT,
                 GLASS_X + GLASS_WIDTH, GLASS_Y + GLASS_HEIGHT);
 
-        // Более толстые стенки
-        topWall.setStroke(GLASS_COLOR);
-        rightWall.setStroke(GLASS_COLOR);
-        bottomWall.setStroke(GLASS_COLOR);
-        topWall.setStrokeWidth(4);
-        rightWall.setStrokeWidth(4);
-        bottomWall.setStrokeWidth(4);
+        // Настройка стилей стенок
+        top.setStroke(Color.DARKBLUE);
+        right.setStroke(Color.DARKBLUE);
+        bottom.setStroke(Color.DARKBLUE);
+        top.setStrokeWidth(3);
+        right.setStrokeWidth(3);
+        bottom.setStrokeWidth(3);
 
-        // Создаем шарик
-        ball = new Circle(BALL_START_X, BALL_START_Y, BALL_RADIUS, BALL_COLOR);
+        // Добавляем стенки на сцену
+        root.getChildren().addAll(top, right, bottom);
+    }
 
-        // Кнопка запуска
-        Button startButton = new Button("ЗАПУСК СУПЕР-ШАРИКА");
-        startButton.setLayoutX(SCENE_WIDTH - 220);
-        startButton.setLayoutY(SCENE_HEIGHT - 60);
-        startButton.setStyle("-fx-font-size: 18px; -fx-padding: 10px 25px; -fx-background-color: #ff5555; -fx-text-fill: white;");
+    /**
+     * Инициализация шарика
+     * @param root Корневой контейнер
+     */
+    private void initBall(Pane root) {
+        // Создаем круг (шарик)
+        ball = new Circle(BALL_RADIUS, BALL_COLOR);
 
-        // Индикатор скорости
-        speedLabel = new Label("Скорость: " + String.format("%.1f", Math.sqrt(dx*dx + dy*dy)));
-        speedLabel.setLayoutX(50);
-        speedLabel.setLayoutY(SCENE_HEIGHT - 40);
-        speedLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        // Устанавливаем начальную позицию
+        resetBall();
 
-        startButton.setOnAction(e -> {
-            resetBall();
-            timeline.play();
-        });
+        // Добавляем шарик на сцену
+        root.getChildren().add(ball);
+    }
 
-        root.getChildren().addAll(topWall, rightWall, bottomWall, ball, startButton, speedLabel);
+    /**
+     * Настройка панели управления
+     * @param root Корневой контейнер
+     */
+    private void setupControls(Pane root) {
+        // Создаем горизонтальную панель
+        HBox controlPanel = new HBox(10);
+        controlPanel.setLayoutX(20);
+        controlPanel.setLayoutY(20);
+        controlPanel.setPadding(new Insets(10));
 
-        // Анимация с усиленными отскоками
+        // Поле для ввода угла
+        angleField = new TextField("45");
+        angleField.setPrefWidth(60);
+        angleField.setTooltip(new Tooltip("Введите угол от 0 до 90 градусов"));
+
+        // Кнопка запуска/перезапуска
+        startBtn = new Button("Запуск");
+        startBtn.setOnAction(e -> startSimulation());
+
+        // Метка статуса
+        statusLabel = new Label("Нажмите 'Запуск' для начала");
+
+        // Добавляем элементы на панель
+        controlPanel.getChildren().addAll(
+                new Label("Угол:"), angleField,
+                startBtn, statusLabel
+        );
+
+        // Добавляем панель на сцену
+        root.getChildren().add(controlPanel);
+    }
+
+    /**
+     * Настройка анимации движения шарика
+     */
+    private void setupAnimation() {
+        // Создаем анимацию с частотой ~60 кадров/сек
         timeline = new Timeline(new KeyFrame(Duration.millis(16), e -> {
-            double nextX = ball.getCenterX() + dx;
-            double nextY = ball.getCenterY() + dy;
-
-            // Гравитация (меньше значение для более плавного падения)
-            dy += GRAVITY;
-
-            // Удар о правую стенку (сильный отскок)
-            if (nextX + BALL_RADIUS > GLASS_X + GLASS_WIDTH) {
-                dx = -Math.abs(dx) * BOUNCE_FACTOR;
-                nextX = GLASS_X + GLASS_WIDTH - BALL_RADIUS;
-            }
-
-            // Удар о верхнюю стенку (сильный отскок)
-            if (nextY - BALL_RADIUS < GLASS_Y) {
-                dy = Math.abs(dy) * BOUNCE_FACTOR;
-                nextY = GLASS_Y + BALL_RADIUS;
-            }
-
-            // Удар о нижнюю стенку (сильный отскок)
-            if (nextY + BALL_RADIUS > GLASS_Y + GLASS_HEIGHT) {
-                dy = -Math.abs(dy) * BOUNCE_FACTOR;
-                nextY = GLASS_Y + GLASS_HEIGHT - BALL_RADIUS;
-            }
-
-            ball.setCenterX(nextX);
-            ball.setCenterY(nextY);
-
-            // Обновляем индикатор скорости
-            speedLabel.setText("Скорость: " + String.format("%.1f", Math.sqrt(dx*dx + dy*dy)));
+            updateBallPosition(); // Основной метод обновления позиции
         }));
-        timeline.setCycleCount(Animation.INDEFINITE);
-
-        primaryStage.setTitle("Шарик в большом стакане");
-        primaryStage.setScene(scene);
-        primaryStage.show();
+        timeline.setCycleCount(Animation.INDEFINITE); // Бесконечная анимация
     }
 
+    /**
+     * Сброс шарика в начальное положение
+     */
     private void resetBall() {
-        ball.setCenterX(BALL_START_X);
-        ball.setCenterY(BALL_START_Y);
-        dx = INITIAL_DX;
-        dy = INITIAL_DY;
-        speedLabel.setText("Скорость: " + String.format("%.1f", Math.sqrt(dx*dx + dy*dy)));
+        // Устанавливаем начальную позицию (внутри стакана)
+        ball.setCenterX(GLASS_X + BALL_RADIUS + 10);
+        ball.setCenterY(GLASS_Y + GLASS_HEIGHT / 2);
+
+        // Сбрасываем счетчик отскоков
+        bounceCount = 0;
+
+        // Делаем шарик видимым
+        ball.setVisible(true);
     }
 
+    /**
+     * Запуск/перезапуск симуляции
+     */
+    private void startSimulation() {
+        try {
+            // Получаем угол от пользователя
+            double angle = Double.parseDouble(angleField.getText());
+
+            // Проверяем корректность угла
+            if (angle < 0 || angle > 90) {
+                statusLabel.setText("Угол должен быть от 0 до 90 градусов!");
+                return;
+            }
+
+            // Генерируем случайную скорость в заданном диапазоне
+            double speed = MIN_SPEED + random.nextDouble() * (MAX_SPEED - MIN_SPEED);
+
+            // Пересчитываем угол в радианы
+            double angleRad = Math.toRadians(angle);
+
+            // Рассчитываем компоненты скорости
+            dx = speed * Math.cos(angleRad);  // Горизонтальная составляющая
+            dy = -speed * Math.sin(angleRad); // Вертикальная составляющая (ось Y направлена вниз)
+
+            // Сбрасываем шарик
+            resetBall();
+
+            // Обновляем статус
+            statusLabel.setText("Шарик в движении...");
+
+            // Запускаем анимацию
+            timeline.play();
+
+        } catch (NumberFormatException e) {
+            statusLabel.setText("Ошибка! Введите число для угла.");
+        }
+    }
+
+    /**
+     * Обновление позиции шарика и проверка столкновений
+     */
+    private void updateBallPosition() {
+        // Рассчитываем новую позицию
+        double nextX = ball.getCenterX() + dx;
+        double nextY = ball.getCenterY() + dy;
+
+        // Проверяем столкновения со стенками
+        checkWallCollisions(nextX, nextY);
+
+        // Проверяем вылет за границы
+        if (isBallOutOfBounds(nextX, nextY)) {
+            handleBallExit();
+            return;
+        }
+
+        // Обновляем позицию шарика
+        ball.setCenterX(nextX);
+        ball.setCenterY(nextY);
+    }
+
+    /**
+     * Проверка столкновений со стенками стакана
+     * @param nextX Предполагаемая позиция X
+     * @param nextY Предполагаемая позиция Y
+     */
+    private void checkWallCollisions(double nextX, double nextY) {
+        // Столкновение с правой стенкой
+        if (nextX + BALL_RADIUS > GLASS_X + GLASS_WIDTH) {
+            dx = -dx; // Меняем направление по X
+            nextX = GLASS_X + GLASS_WIDTH - BALL_RADIUS;
+            bounceCount++;
+        }
+
+        // Столкновение с верхней стенкой
+        if (nextY - BALL_RADIUS < GLASS_Y) {
+            dy = -dy; // Меняем направление по Y
+            nextY = GLASS_Y + BALL_RADIUS;
+            bounceCount++;
+        }
+
+        // Столкновение с нижней стенкой
+        if (nextY + BALL_RADIUS > GLASS_Y + GLASS_HEIGHT) {
+            dy = -dy; // Меняем направление по Y
+            nextY = GLASS_Y + GLASS_HEIGHT - BALL_RADIUS;
+            bounceCount++;
+        }
+    }
+
+    /**
+     * Проверка вылета шарика за границы
+     * @param nextX Предполагаемая позиция X
+     * @param nextY Предполагаемая позиция Y
+     * @return true если шарик вылетел за границы
+     */
+    private boolean isBallOutOfBounds(double nextX, double nextY) {
+        // Проверяем левую границу, верх и низ экрана
+        return nextX - BALL_RADIUS < 0 ||    // Левая граница экрана
+                nextY - BALL_RADIUS < 0 ||    // Верхняя граница экрана
+                nextY + BALL_RADIUS > WINDOW_HEIGHT; // Нижняя граница экрана
+    }
+
+    /**
+     * Обработка вылета шарика за границы
+     */
+    private void handleBallExit() {
+        // Останавливаем анимацию
+        timeline.stop();
+
+        // Прячем шарик
+        ball.setVisible(false);
+
+        // Обновляем статус
+        statusLabel.setText("Шарик вылетел! Нажмите 'Запуск' для нового шарика");
+    }
+
+    /**
+     * Точка входа в программу
+     * @param args Аргументы командной строки
+     */
     public static void main(String[] args) {
-        launch(args);
+        launch(args); // Стандартный запуск JavaFX
     }
 }
+
+
+

@@ -10,6 +10,7 @@ module org.example.ball {
     requires org.kordamp.bootstrapfx.core;
     requires eu.hansolo.tilesfx;
     requires com.almasb.fxgl.all;
+    requires java.desktop;
 
     opens org.example.ball to javafx.fxml;
     exports org.example.ball;
