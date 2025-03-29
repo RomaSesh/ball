@@ -251,8 +251,8 @@ public class ball extends Application {
         }
 
         // Обновляем позицию шарика
-        ball.setCenterX(nextX);
-        ball.setCenterY(nextY);
+        ball.setCenterX(nextX);// Устанавливаем новую позицию
+        ball.setCenterY(nextY);// Устанавливаем новую позицию
     }
 
     /**
