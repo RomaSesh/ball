@@ -21,6 +21,7 @@ import java.util.Random;
  * - Шарик вылетает за границы и ждет команды
  * - Полный контроль пользователя
  * - Подробная документация
+ * author: RomaSesh
  */
 public class ball extends Application {
 
