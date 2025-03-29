@@ -278,7 +278,7 @@ public class ball extends Application {
         // Столкновение с нижней стенкой
         if (nextY + BALL_RADIUS > GLASS_Y + GLASS_HEIGHT) {
             dy = -dy; // Меняем направление по Y
-            nextY = GLASS_Y + GLASS_HEIGHT - BALL_RADIUS;
+            nextY = GLASS_Y + GLASS_HEIGHT - BALL_RADIUS;// Меняем направление по Y
             bounceCount++;
         }
     }
