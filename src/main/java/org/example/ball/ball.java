@@ -238,8 +238,8 @@ public class ball extends Application {
      */
     private void updateBallPosition() {
         // Рассчитываем новую позицию
-        double nextX = ball.getCenterX() + dx;
-        double nextY = ball.getCenterY() + dy;
+        double nextX = ball.getCenterX() + dx;// Получаем текущую позицию X
+        double nextY = ball.getCenterY() + dy;// Получаем текущую позицию Y
 
         // Проверяем столкновения со стенками
         checkWallCollisions(nextX, nextY);
