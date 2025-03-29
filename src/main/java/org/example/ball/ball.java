@@ -106,8 +106,8 @@ public class ball extends Application {
                 GLASS_X + GLASS_WIDTH, GLASS_Y + GLASS_HEIGHT);// Создать линию
 
         // Нижняя стенка
-        Line bottom = new Line(GLASS_X, GLASS_Y + GLASS_HEIGHT,
-                GLASS_X + GLASS_WIDTH, GLASS_Y + GLASS_HEIGHT);
+        Line bottom = new Line(GLASS_X, GLASS_Y + GLASS_HEIGHT,// Создать линию
+                GLASS_X + GLASS_WIDTH, GLASS_Y + GLASS_HEIGHT);// Создать линию
 
         // Настройка стилей стенок
         top.setStroke(Color.DARKBLUE);
