@@ -99,11 +99,11 @@ public class ball extends Application {
      */
     private void createGlass(Pane root) {
         // Верхняя стенка
-        Line top = new Line(GLASS_X, GLASS_Y, GLASS_X + GLASS_WIDTH, GLASS_Y);
+        Line top = new Line(GLASS_X, GLASS_Y, GLASS_X + GLASS_WIDTH, GLASS_Y);// Создать линию
 
         // Правая стенка
-        Line right = new Line(GLASS_X + GLASS_WIDTH, GLASS_Y,
-                GLASS_X + GLASS_WIDTH, GLASS_Y + GLASS_HEIGHT);
+        Line right = new Line(GLASS_X + GLASS_WIDTH, GLASS_Y,// Создать линию
+                GLASS_X + GLASS_WIDTH, GLASS_Y + GLASS_HEIGHT);// Создать линию
 
         // Нижняя стенка
         Line bottom = new Line(GLASS_X, GLASS_Y + GLASS_HEIGHT,
